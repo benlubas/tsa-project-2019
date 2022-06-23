@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dungeon Dean</title>
+         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src='scripts/b5.js'></script>
+
+    </head>
+
+    <body onload='initialize()'>
+        <!--<canvas id='drawingCanvas' width='500px' height='500px'></canvas>-->
+        <script>
+          var canvas;
+          var con;
+          var sprite;
+          var spriteFrameWidth;
+          var spriteFrameHeight;
+          var spriteFrameX;
+          var x;
+          var y;
+          var time;
+          var grass;
+          var robot;
+          var s1;
+          var skel;
+          var skelfx;
+         var skelfy;
+          var skelfh=64;
+          var skelfw=64;
+          var skelx,skely;
+          var s2;
+          var s3;
+          var tree;
+          var black;
+
+          var cWidth = 1280;
+          var cHeight = 720;
+
+
+
+
+
+
+            function initialize(){
+                createCanvas(1280,720);
+                con = getCon();
+                sprite = new Image();
+                sprite.src="images/sprite.png";
+                spriteFrameWidth=64;
+                spriteFrameHeight=64;
+                spriteFrameX=0;
+                spriteFrameY=9;
+                x=300;
+                y=250;
+                time=0;
+
+                skelx=-10;
+                skely=250;
+
+                skelfy=11;
+                skelfx=0;
+
+                tree = new Image();
+                tree.src="intro/greenTrees.png";
+
+                grass = new Image();
+                grass.src = "intro/grass00.png";
+
+                robot=new Image();
+                robot.src="intro/robot.png";
+
+                s1 = new Image();
+                s1.src="intro/s1.png";
+
+                skel = new Image();
+                skel.src="images/skelly.png";
+
+                s2 = new Image();
+                s2.src="intro/s2.png";
+
+                s3 = new Image();
+                s3.src = "intro/s3.png";
+
+                update();
+            }
+
+            function update(){
+                time++;
+               if(time>540 && time<750){
+                   skelx++;
+                   if(time%7==0){
+                   skelfx++;
+                   }
+                   if(skelfx>8){
+                       skelfx=0;
+                   }
+               }
+               if(time==750){
+                skelfx=0;
+               }
+
+                draw();
+                requestAnimationFrame(update);
+            }
+
+            function draw(){
+                con.beginPath();
+                con.clearRect(x,y,1280,720);
+                for(var p=0;p*100<=1280;p++){
+                    for(var q =0; q*100<=720;q++){
+                        con.drawImage(grass,p*100,q*100);
+                    }
+                }
+                con.drawImage(tree,500,500);
+                con.drawImage(tree,100,100);
+                con.drawImage(tree,400,200);
+                con.drawImage(tree,300,300);
+                con.drawImage(tree,150,400);
+                con.drawImage(tree,700,300);
+                con.drawImage(tree,1000,500);
+                con.drawImage(robot,250,250);
+                con.drawImage(sprite,spriteFrameX*spriteFrameWidth,spriteFrameY*spriteFrameHeight,spriteFrameWidth,spriteFrameHeight,x,y,spriteFrameWidth,spriteFrameHeight);
+
+
+                if(time>180&&time<420){
+                  con.drawImage(s1,240,200);
+                }
+                if(time>540){
+                  con.drawImage(skel,skelfx*skelfw,skelfy*skelfh,skelfw,skelfh,skelx,skely,skelfw,skelfh);
+                }
+                if(time>760 && time<1000){
+                  con.drawImage(s2,180,200);
+                }
+                if(time>1060 && time<1400){
+                  con.drawImage(s3,240,200);
+                }
+
+
+                if(time > 1400){
+                  background("black", cWidth, cHeight);
+                  // canvasText(text, pos,  font, size, color){
+                  canvasText("Click Anywhere to Play!", new Point(400, cHeight/2), "times new Roman", 50, "#77FF77");
+                  canvasText("W-A-S-D to Move", new Point(517, cHeight/2 + 50), "Times New Roman", 30, "#77FF77");
+                  canvasText("Space to Cast Spell", new Point(512, cHeight/2 + 80), "Times New Roman", 30, "#77FF77");
+                  canvasText("Collect Gears && Find the Door!", new Point(490, cHeight/2+110), "times new roman", 20, "#77FF77");
+                }
+
+
+
+
+
+
+
+
+                con.closePath();
+              }
+
+              $(document).on('click', 'canvas', function(){
+                if(time > 1400){
+                  var lvlNum = 0;
+                  window.sessionStorage.setItem("level", lvlNum);
+                  location.replace("setup.html");
+                }
+              });
+
+        </script>
+
+    </body>
+
+</html>

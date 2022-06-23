@@ -1,0 +1,52 @@
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <head>
+    <title>
+      Dungeon Dean
+    </title>
+  </head>
+  <style>
+  body{
+    background-color:#515151;
+  }
+    h1{
+
+      text-align:center;
+      color:#77FF77;
+      font-size:3em;
+    }
+    button{
+      margin:10px;
+      padding:30px;
+      font-size:1em;
+      background-color:#77FF77;
+      color:white;
+    }
+    button:hover{
+      padding:40px;
+      margin:0px;
+
+    }
+  </style>
+
+  <h1>
+    You Won!
+    <br>
+    <button id='play'>Play Again</button>
+    <br>
+    <button id='skip'>Skip the Cut Scene</button>
+  </h1>
+  <script>
+    $(document).ready(function(){
+      $topMargin = window.innerHeight;
+      $('h1').css("margin-top", $topMargin/3.9);
+      $('#play').click(function(){
+        location.replace("intro/intro.html");
+      });
+      $('#skip').click(function(){
+        location.replace("setup.html");
+      });
+    });
+
+  </script>
+</html>

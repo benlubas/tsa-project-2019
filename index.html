@@ -1,0 +1,271 @@
+<html>
+  <head>
+    <title>
+      Dungeon Dean
+    </title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="scripts/b5.js"></script>
+    <script src="scripts/shitThatIDontLikeInTheMainFile.js"></script>
+    <script src='scripts/levelData.js'></script>
+    <script src="scripts/skelly.js"></script>
+    <script src="scripts/level.js"></script>
+    <script src="scripts/projectiles.js"></script>
+    <script src="scripts/player.js"></script>
+    <script src="scripts/assortedFunctions.js"></script>
+    <script src="scripts/constructors.js"></script>
+
+
+    <style>
+      canvas{
+        cursor:none;
+      }
+    </style>
+  </head>
+  <script>
+    if(window.sessionStorage.getItem('level') == undefined){
+      location.replace("setup.html");
+    }
+  </script>
+  <body>
+    <script>
+      ///CANVAS VARS///
+      var reqId;
+      var con;
+      var cHeight, cWidth;
+      cWidth = 1280;
+      cHeight = 720;
+      createCanvas(cWidth, cHeight);
+      var ui = new UI(25, 25);
+      var winTimer = 0;
+
+      //declare IMPORTANT variables
+      var main;
+      var staff;
+      //levels (in onother file);
+      var levelNum;
+      var rl;
+      var walls = [];
+
+      var win = false;
+
+      var bullets = [];
+      var eBullets = [];
+
+      var lvlNum = parseInt(window.sessionStorage.getItem("level"));
+
+      var floor;
+      var floorPos;
+
+      var shift;
+
+      $(document).ready(initialize());
+
+      function initialize(){
+        con = getCon();
+        staff = new Staff("Green", 30);
+        main = new Player(400,400, 30, 48, 3, staff);
+        rl = new Level(lvlNum + 1, levels[lvlNum]);
+        rl.loadLvl();
+
+        floor = new Image;
+        floor.src = "images/floorFinal.jpg";
+        floorPos = new Point(0,0);
+
+
+
+        shift = new Point(0,0);
+
+        update();
+      }
+
+      function update(){
+        main.update();
+        main.shoot();
+        if(main.center.dist(new Point(rl.winPos.x + 20, rl.winPos.y+30)) < 60 && rl.parts.length == main.parts.length){
+          if(lvlNum == levels.length -1){
+            win = true;
+          }else {
+            lvlNum++;
+            window.sessionStorage.setItem("level", lvlNum);
+            location.reload();
+          }
+        }
+
+        for(var x = 0; x < bullets.length; x++){
+          bullets[x].update();
+        }
+        for(var x = 0; x < rl.enemies.length; x++){
+          rl.enemies[x].update(main.pos);
+        }
+        for(var x = 0; x < eBullets.length; x++){
+          eBullets[x].update();
+        }
+        for(var x = 0; x < rl.parts.length; x++){
+          rl.parts[x].update();
+        }
+
+
+
+
+        //Bullet -> Wall Collisions
+        for(var x = bullets.length-1; x >= 0; x--){
+          var p = bullets[x].pos;
+          var r = bullets[x].radius;
+          if(p.y+r >= rl.walls[rl.cornerIndexes[2]].pos.y || p.y-r <= rl.walls[rl.cornerIndexes[0]].pos.y+64 || p.x+r >= rl.walls[rl.cornerIndexes[1]].pos.x || p.x-r <= rl.walls[rl.cornerIndexes[0]].pos.x+64){
+            bullets.splice(x, 1);
+            continue;
+          }
+          if(p.dist(new Point(cWidth / 2, cHeight / 2)) > 2000){
+            bullets.splice(x, 1);
+            continue;
+          }
+          else {
+            for(var y = 0; y < rl.innerWalls.length; y++){
+              if(bulletWallCollision(bullets[x], rl.innerWalls[y])){
+                bullets.splice(x, 1);
+                break;
+              }
+            }
+          }
+        }
+        //EnemyBullet -> wall collisions
+        for(var x = eBullets.length-1; x >= 0; x--){
+          var p = eBullets[x].pos;
+          var r = eBullets[x].radius;
+          if(p.y+r >= rl.walls[rl.cornerIndexes[2]].pos.y || p.y-r <= rl.walls[rl.cornerIndexes[0]].pos.y+64 || p.x+r >= rl.walls[rl.cornerIndexes[1]].pos.x || p.x-r <= rl.walls[rl.cornerIndexes[0]].pos.x+64){
+            eBullets.splice(x, 1);
+            continue;
+          }
+          if(p.dist(new Point(cWidth / 2, cHeight / 2)) > 2000){
+            eBullets.splice(x, 1);
+            continue;
+          }
+        }
+
+        //Enemy bullet -> olayer Collisions
+        for(var x = 0; x < eBullets.length; x++){
+          if(eBullets[x].center.dist(main.center) < eBullets[x].radius + 21){
+            main.health -= eBullets[x].damage;
+            eBullets.splice(x, 1);
+            break;
+          }
+        }
+
+        //main Bullet -> enemy Collisions
+        for(var x = rl.enemies.length -1; x >= 0; x--){
+          for(var y = bullets.length -1; y >= 0; y--){
+            if(bullets[y].center.dist(rl.enemies[x].center) < bullets[y].radius + 21){
+              rl.enemies[x].health -= bullets[y].damage;
+              bullets.splice(y, 1);
+              break;
+            }
+          }
+        }
+
+
+        //remove dead Skellys
+        for(var x = rl.enemies.length-1; x >= 0; x--){
+          if(rl.enemies[x].health < 0){
+            rl.enemies.splice(x, 1);
+            main.health += 10;
+            if(main.health > main.maxHealth){
+              main.health = main.maxHealth;
+            }
+          }
+        }
+
+        if(main.health <= 0){
+          location.reload();
+        }
+
+
+
+
+
+
+        ///MOVING THE LEVEL///
+        // this should happen last
+        if((main.pos.x > cWidth / 3 && k.d) ||(main.pos.x < cWidth - cWidth/3 && k.a) || (main.pos.y > cHeight/3 && k.s) || (main.pos.y < cHeight-cHeight/3 && k.w)){
+          shift = new Point (0,0);
+          if(k.w){
+            shift.y += 3;
+          }
+          if(k.s){
+            shift.y -= 3;
+          }
+          if(k.a){
+            shift.x += 3;
+          }
+          if(k.d){
+            shift.x -= 3;
+          }
+
+          shiftThatJawn();
+
+          //shit go back
+          var sx = false;
+          var sy = false;
+          if(rl.render[0][0].pos != undefined){
+            if(rl.walls[rl.cornerIndexes[0]].pos.x > 0){
+              shift.x = 0 - rl.walls[rl.cornerIndexes[0]].pos.x;
+              sx = true;
+            }
+            if(rl.walls[rl.cornerIndexes[0]].pos.y > 0){
+              shift.y = 0 - rl.walls[rl.cornerIndexes[0]].pos.y;
+              sy = true;
+            }
+            if(rl.walls[rl.cornerIndexes[3]].pos.x + 64 < cWidth){
+              shift.x = cWidth - rl.walls[rl.cornerIndexes[3]].pos.x -64;
+              sx = true;
+            }
+            if(rl.walls[rl.cornerIndexes[3]].pos.y + 64 < cHeight){
+              shift.y = cHeight - rl.walls[rl.cornerIndexes[3]].pos.y -64;
+              sy = true;
+            }
+          }
+          if(!sy) shift.y = 0;
+          if(!sx) shift.x = 0;
+
+          shiftThatJawn(main.disableXShift, main.disableYShift);
+        }
+
+
+        reqId = requestAnimationFrame(update);
+        draw();
+      }
+
+      function draw(){
+
+
+        background("#515151", cWidth, cHeight);
+        con.drawImage(floor, floorPos.x, floorPos.y);
+        // main.draw();
+        rl.draw();
+        main.draw();
+        for(var x = 0; x < bullets.length; x++){
+          bullets[x].draw();
+        }
+        for(var x = 0; x < eBullets.length; x++){
+          eBullets[x].draw();
+        }
+        for(var x = 0; x < rl.enemies.length; x++){
+          rl.enemies[x].draw();
+        }
+        ui.draw();
+
+        if(win){
+          winTimer++;
+          var txt = new Image();
+          txt.src = "images/speech.png";
+          con.drawImage(txt, main.pos.x + main.spriteFrameWidth/2 -40, main.pos.y - 45);
+          if(winTimer > 8*60){
+            location.replace("gameEnd.html");
+          }
+        }
+
+        mouse.draw();
+      }
+
+    </script>
+    </body>
+</html>
